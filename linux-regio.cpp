@@ -13,15 +13,9 @@
 
 using namespace px4;
 
-// @id: client identification string, in the form "<bus>.<addr>"
-i2c_regio::i2c_regio(const char *id) {
+i2c_regio::i2c_regio(int bus, int addr) {
 	int ret;
 	char path[256];
-
-	dev = NULL;
-	if (!px4::regcache::id2busaddr(id, bus, addr))
-		return;
-
 	snprintf(path, sizeof(path), "/dev/i2c-%d", bus);
 	fd = open(path, O_RDWR);
 	if (fd == -1) {
@@ -31,15 +25,9 @@ i2c_regio::i2c_regio(const char *id) {
 	ret = ioctl(fd, I2C_SLAVE, addr);
 	if (ret)
 		goto err_open;
-
-	int i2c_funcs;
-	ret = ioctl(fd, I2C_FUNCS, &i2c_funcs);
-	std::cerr << "i2c_funcs = " << i2c_funcs << " (ret = " << ret << ")" << std::endl;
-
-	dev = id;
 	return;
 err_open:
-	std::cerr << "error " << ret << " in i2c_regio::i2c_regio(" << id << ")" << std::endl;
+	std::cerr << "error " << ret << " in i2c_regio::i2c_regio(" << bus << ", " << addr << ")" << std::endl;
 	close(fd);
 	fd = -1;
 	return;
@@ -62,7 +50,7 @@ bool i2c_regio::read_reg(const px4::reg_t &reg, int &val) {
 
 	ret = ioctl(fd, I2C_SMBUS, &args);
 	if (ret || !data.block[0])
-		goto err;
+		return false;
 
 	val = *buf++;
 
@@ -72,7 +60,6 @@ bool i2c_regio::read_reg(const px4::reg_t &reg, int &val) {
 		val = (val << 8) + *buf++;
 
 	return true;
-err:
-	std::cerr << "i2c_regio::read_reg(): ioctl() returned " << ret << std::endl;
-	return false;
 }
+
+bool i2c_regio::write_reg(const px4::reg_t &reg, int val) { return false; }

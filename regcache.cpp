@@ -1,5 +1,5 @@
-#include <iostream>
 #include <cstring>
+#include <cstdlib>
 
 #include <px4/regcache.h>
 
@@ -7,15 +7,46 @@ static const char *i2c_id = "i2c:";
 static const char *spi_id = "spi:";
 static const char *mem_id = "mem:";
 
-px4::regcache::regcache(const char *id, px4::reg_t *map) {
-	this->map = map;
+// @path is:
+//    "drivername@bustype:busnum.addr"
+//
+// i.e.:
+//    "mpu9250@i2c:2.0x69"
+//
+
+void px4::regcache::bus(int &id, int &cli)
+{
+	char *next;
+	id = strtol(addr(), &next, 0);
+	cli = strtol(++next, NULL, 0);
+}
+
+const char *px4::regcache::bus() const
+{
+	const char *ret = strchr(path, '@');
+	if (!ret) return path;
+	return ++ret;
+}
+
+const char *px4::regcache::addr() const
+{
+	const char *ret = strchr(bus(), ':');
+	if (!ret) return bus();
+	return ++ret;
+}
+
+px4::regcache::regcache(const char *path, px4::reg_t *map) {
 	dev = NULL;
-	if (strstr(id, i2c_id))
-		dev = new px4::i2c_regio(id + strspn(id, i2c_id));
-	else if (strstr(id, spi_id))
-		dev = new px4::spi_regio(id + strspn(id, spi_id));
-	else if (strstr(id, mem_id))
-		dev = new px4::mem_regio(id + strspn(id, mem_id));
-	else
-		std::cerr << "regcache::regcache(): unknown register i/o type: " << id << std::endl;
+	this->map = map;
+	this->path = path;
+
+	if (strstr(path, i2c_id)) {
+		int id, cli;
+		bus(id, cli);
+		dev = new px4::i2c_regio(id, cli);
+	}
+	else if (strstr(path, spi_id))
+		dev = new px4::spi_regio(addr());
+	else if (strstr(path, mem_id))
+		dev = new px4::mem_regio(addr());
 }

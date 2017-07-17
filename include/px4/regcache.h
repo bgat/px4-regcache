@@ -147,7 +147,7 @@ namespace px4 {
 	//
 	class regio {
 	public:
-		regio() {dev = NULL;}
+		regio() { }
 		virtual ~regio() {}
 
 		virtual bool is_ok() { return true; }
@@ -156,31 +156,26 @@ namespace px4 {
 		inline bool is_writable(const reg_t &reg) const { return reg.ioperm & ioperm::WRITE ? true : false; }
 		inline int mask_reserved(const reg_t &reg, int &val) { return val & ~reg.rmask; }
 
-		// TODO: how to handle errno?
-		// TODO: handle blocks of adjacent registers
-		
 		bool read(const reg_t &reg, int &val) {
-			if (false == is_readable(reg))
+			if (is_readable(reg) == false)
 				return false;
-			if (false == read_reg(reg, val))
+			if (read_reg(reg, val) == false)
 				return false;
 			val = mask_reserved(reg, val);
 			return true;
 		}
 		bool write(const reg_t &reg, int val) {
-			if (false == is_writable(reg))
+			if (is_writable(reg) == false)
 				return false;
-			if (false == write_reg(reg, mask_reserved(reg, val)))
+			if (write_reg(reg, mask_reserved(reg, val)) == false)
 				return false;
 			return true;
 		}
 
-		// TODO: buffering register values for save/restore, read-from-write-only, etc.
 	protected:
 		// these get overloaded to support specific bus and OS types
 		virtual bool read_reg(const reg_t &reg, int &val) { return false; }
 		virtual bool write_reg(const reg_t &reg, int val) { return false; }
-		const void *dev;
 	};
 
 
@@ -198,10 +193,12 @@ namespace px4 {
 	//
 	class regcache {
 	public:
-		regcache(const char *id, reg_t *map);
+		regcache(const char *path, reg_t *map);
 		~regcache() { delete dev; }
 
-		inline const char *info() { return this->id; }
+		void bus(int &id, int &cli);
+		const char *bus() const; // "i2c:1.2"
+		const char *addr() const; // "1.2"
 		inline bool read(const reg_t &reg, int &val) { return dev->read(reg, val); }
 		inline bool read(int idx, int &val) { return read(map[idx], val); }
 		inline bool write(const reg_t &reg, int val) { return dev->write(reg, val); }
@@ -211,18 +208,9 @@ namespace px4 {
 
 		// TODO: operator[]?
 
-		// helper to crack apart <bus>.<addr> strings
-		static bool id2busaddr(const char *id, int &bus, int &addr) {
-			char *next;
-			bus = strtol(id, &next, 0);
-			addr = strtol(++next, NULL, 0);
-			return true;
-		}
-
 	private:
 		regcache(/* a register cache with no registers makes no sense */) {};
-
-		const char *id;
+		const char *path; // i.e. "mpu9250@i2c:2.3"
 		const reg_t *map;
 		regio *dev;
 	};

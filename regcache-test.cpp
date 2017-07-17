@@ -30,5 +30,5 @@ int main(int argc, const char *argv[], const char *env[])
 	err = s.write(SOMEDATA, val);
 	err = s.write(regs[SOMEDATA], val);
 	
-	return 0;
+	return err ? 1 : 0;
 }

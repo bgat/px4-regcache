@@ -3,31 +3,24 @@
 
 class i2c_regio : public px4::regio {
 public:
-	// @id: client identification string, in the form "<bus>.<addr>"
-	i2c_regio(const char *id);
+	i2c_regio(int bus, int addr);
 	~i2c_regio();
 	bool is_ok() { return fd != -1 ? true : false; }
 	bool read_reg(const px4::reg_t &reg, int &val);
-	bool write_reg(const px4::reg_t &reg, int val) {
-		// TODO: ...
-		return false;
-	}
+	bool write_reg(const px4::reg_t &reg, int val);
 
 private:
 	i2c_regio(/* i2c clients need addresses specified */ ) {}
-	int bus, addr;
 	int fd;
 };
 
 
-// Linux userspace spidev register accessor
-// TODO: provide an equivalent for NuttX
+// TODO: Linux userspace spidev register accessor
 class spi_regio : public px4::regio {
 public:
 	// @id: client identification string, in the form "spi:<bus>.<slave>"
 	spi_regio(const char *id) {
 		// TODO: ...
-		dev = id;
 		fd = -1;
 	}
 	~spi_regio() {}
@@ -40,12 +33,12 @@ private:
 	int fd;
 };
 
+// TODO: Linux mmio accessor
 class mem_regio : public px4::regio {
 public:
 	// @id: client identification string, in the form "mem:<len>@<physaddr>"
 	mem_regio(const char *id) {
 		// TODO: ...
-		dev = id;
 		mem = NULL;
 	}
 	~mem_regio() {}
