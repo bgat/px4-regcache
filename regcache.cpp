@@ -23,8 +23,8 @@ void px4::regcache::bus(int &id, int &cli)
 
 const char *px4::regcache::bus() const
 {
-	const char *ret = strchr(path, '@');
-	if (!ret) return path;
+	const char *ret = strchr(path.c_str(), '@');
+	if (!ret) return path.c_str();;
 	return ++ret;
 }
 
@@ -35,18 +35,17 @@ const char *px4::regcache::addr() const
 	return ++ret;
 }
 
-px4::regcache::regcache(const char *path, px4::reg_t *map) {
+px4::regcache::regcache(const std::string &p, px4::reg_t *map) : path(p) {
 	dev = NULL;
 	this->map = map;
-	this->path = path;
 
-	if (strstr(path, i2c_id)) {
+	if (strstr(path.c_str(), i2c_id)) {
 		int id, cli;
 		bus(id, cli);
 		dev = new px4::i2c_regio(id, cli);
 	}
-	else if (strstr(path, spi_id))
+	else if (strstr(path.c_str(), spi_id))
 		dev = new px4::spi_regio(addr());
-	else if (strstr(path, mem_id))
+	else if (strstr(path.c_str(), mem_id))
 		dev = new px4::mem_regio(addr());
 }

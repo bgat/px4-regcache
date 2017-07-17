@@ -2,6 +2,7 @@
 #define __REGCACHE_H_INCLUDED__
 
 #include <cstring>
+#include <string>
 
 namespace px4 {
 
@@ -193,7 +194,7 @@ namespace px4 {
 	//
 	class regcache {
 	public:
-		regcache(const char *path, reg_t *map);
+		regcache(const std::string &path, reg_t *map);
 		~regcache() { delete dev; }
 
 		void bus(int &id, int &cli);
@@ -209,8 +210,8 @@ namespace px4 {
 		// TODO: operator[]?
 
 	private:
-		regcache(/* a register cache with no registers makes no sense */) {};
-		const char *path; // i.e. "mpu9250@i2c:2.3"
+		regcache(/* a register cache with no registers makes no sense */);
+		const std::string &path; // i.e. "mpu9250@i2c:2.3"
 		const reg_t *map;
 		regio *dev;
 	};
