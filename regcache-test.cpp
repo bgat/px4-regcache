@@ -10,11 +10,12 @@ int main(int argc, const char *argv[], const char *env[])
 	
 	// TODO: how to make this initialization order-independent?
 	px4::reg_t regs[] = {
-		[SOMEDATA] = {42, px4::ioperm::READ | px4::ioperm::WRITE, 0},
-		[CHIP_ID] = {0, px4::ioperm::READ, 6},
+		[SOMEDATA] = {42, px4::ioperm::READ | px4::ioperm::WRITE, 1, 0},
+		[CHIP_ID] = {0, px4::ioperm::READ, 1, 6},
 	};
 	px4::regcache i("i2c:2.0x68", regs);
-	px4::regcache s("spi:1.2", regs);
+	//px4::regcache s("spi:1.2", regs);
+	px4::regcache s("hm3553@i2c:2.0x68", regs);
 
 	std::cerr << "i.is_ok() returns " << i.is_ok() << std::endl;
 	std::cerr << "s.is_ok() returns " << s.is_ok() << std::endl;

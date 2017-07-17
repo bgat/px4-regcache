@@ -52,15 +52,25 @@ bool i2c_regio::read_reg(const px4::reg_t &reg, int &val) {
 	struct i2c_smbus_ioctl_data args;
 	int ret;
 
+	__u8 *buf = &data.block[1];
+	data.block[0] = reg.width;
+
 	args.read_write = I2C_SMBUS_READ;
 	args.command = reg.offset;
-	args.size = I2C_SMBUS_BYTE;
 	args.data = &data;
+	args.size = I2C_SMBUS_BLOCK_DATA;
 
 	ret = ioctl(fd, I2C_SMBUS, &args);
-	if (ret)
+	if (ret || !data.block[0])
 		goto err;
-	val = data.byte;
+
+	val = *buf++;
+
+	// note: this will merely truncate, rather than clobber memory,
+	// if the register size is larger than sizeof(int)
+	while (--data.block[0])
+		val = (val << 8) + *buf++;
+
 	return true;
 err:
 	std::cerr << "i2c_regio::read_reg(): ioctl() returned " << ret << std::endl;
