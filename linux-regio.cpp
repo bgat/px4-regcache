@@ -11,9 +11,25 @@
 #include <sys/stat.h>
 #include <linux/i2c-dev.h>
 
-using namespace px4;
+#if !defined(I2C_SMBUS_READ)
+// instead of forcing libi2c-dev, recreate the parts we need
 
-i2c_regio::i2c_regio(int bus, int addr) {
+/* smbus_access read or write markers */
+#define I2C_SMBUS_READ	1
+#define I2C_SMBUS_WRITE	0
+
+// block data transfer command
+#define I2C_SMBUS_BLOCK_DATA	5
+#define I2C_SMBUS_BLOCK_MAX	32
+
+union i2c_smbus_data {
+	__u8 byte;
+	__u16 word;
+	__u8 block[I2C_SMBUS_BLOCK_MAX + 2];
+};
+#endif
+
+px4::i2c_regio::i2c_regio(int bus, int addr) {
 	int ret;
 	char path[256];
 	snprintf(path, sizeof(path), "/dev/i2c-%d", bus);
@@ -33,9 +49,9 @@ err_open:
 	return;
 }
 
-i2c_regio::~i2c_regio() { if (fd != -1) close(fd); }
+px4::i2c_regio::~i2c_regio() { if (fd != -1) close(fd); }
 
-bool i2c_regio::read_reg(const px4::reg_t &reg, int &val) {
+bool px4::i2c_regio::read_reg(const px4::reg_t &reg, int &val) {
 	union i2c_smbus_data data;
 	struct i2c_smbus_ioctl_data args;
 	int ret;
@@ -62,4 +78,4 @@ bool i2c_regio::read_reg(const px4::reg_t &reg, int &val) {
 	return true;
 }
 
-bool i2c_regio::write_reg(const px4::reg_t &reg, int val) { return false; }
+bool px4::i2c_regio::write_reg(const px4::reg_t &reg, int val) { return false; }
